@@ -1,4 +1,6 @@
+import nuke
 import re
+import nukescripts
 
 def get_layers(readNode):
     '''returns a list of all the layers '''
@@ -11,10 +13,10 @@ def get_lightgroup_minicomp_settings():
     '''Customize lightgroup naming conventions used'''
     settings={}
     p = nuke.Panel('Lighrgroup Shuffle out settings')
-    p.addSingleLineInput('lightgroup flags (comma seperated)', '_ASS_, _L_, Light, light ')
+    p.addSingleLineInput('lightgroup flags (comma seperated)', 'LGT, C_')
     p.addBooleanCheckBox('show shuffle postage stamps', False)
-    p.addSingleLineInput('xSpace', '600')
-    p.addSingleLineInput('ySpace', '300')
+    p.addSingleLineInput('xSpace', '300')
+    p.addSingleLineInput('ySpace', '1')
     ret = p.show()
     flags=p.value('lightgroup flags (comma seperated)')
     flags= re.sub(' ', '', flags)
@@ -30,7 +32,7 @@ def get_lightgroups(node, flags ):
     '''Returns a list of aovs which are lightgroups (based on naming convention flags set in LightGroupLabels list) ''' 
     
     lightGroupLayers=[]
-    for aov in get_layers(n):
+    for aov in get_layers(node):
     
         for flag in flags:
             if flag in aov and aov not in lightGroupLayers:
@@ -108,8 +110,6 @@ def shuffle_out_lightgroups(node, settings = get_lightgroup_minicomp_settings() 
     premult = nuke.nodes.Premult(inputs = [removeNode] )
     premult.setXYpos(node.xpos(), yPos)
 
-n= nuke.selectedNode()
-shuffle_out_lightgroups(n)
 
 
 
