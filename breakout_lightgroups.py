@@ -2,9 +2,10 @@ import nuke
 import re
 import nukescripts
 
-def get_layers(readNode):
+
+def get_layers(node):
     '''returns a list of all the layers '''
-    channels = readNode.channels()
+    channels = node.channels()
     layers = list( set([c.split('.')[0] for c in channels]) )
     layers.sort()
     return layers
@@ -13,14 +14,18 @@ def get_lightgroup_minicomp_settings():
     '''Customize lightgroup naming conventions used'''
     settings={}
     p = nuke.Panel('Lighrgroup Shuffle out settings')
-    p.addSingleLineInput('lightgroup flags (comma seperated)', 'LGT, C_')
+    p.addSingleLineInput('lightgroup flags (comma separated)', 'LGT, C_')
+    p.addSingleLineInput('material flags (comma separated)', 'M_')
     p.addBooleanCheckBox('show shuffle postage stamps', False)
     p.addSingleLineInput('xSpace', '300')
-    p.addSingleLineInput('ySpace', '1')
+    p.addSingleLineInput('ySpace', '150')
     ret = p.show()
-    flags=p.value('lightgroup flags (comma seperated)')
-    flags= re.sub(' ', '', flags)
-    settings['flags'] = flags.split(',')
+    lg_flags = p.value('lightgroup flags (comma separated)')
+    lg_flags = re.sub(' ', '', lg_flags)
+    settings['lg_flags'] = lg_flags.split(',')
+    mat_flags = p.value('material flags (comma separated)')
+    mat_flags = re.sub(' ', '', mat_flags)
+    settings['mat_flags'] = mat_flags.split(',')
     settings['pstamps'] = p.value('show shuffle postage stamps')
     settings['xSpace'] = p.value('xSpace')
     settings['ySpace'] = p.value('ySpace')
@@ -28,17 +33,19 @@ def get_lightgroup_minicomp_settings():
 
 
 
-def get_lightgroups(node, flags ):
+def get_lightgroups(node, lg_flags ):
     '''Returns a list of aovs which are lightgroups (based on naming convention flags set in LightGroupLabels list) ''' 
     
     lightGroupLayers=[]
     for aov in get_layers(node):
     
-        for flag in flags:
+        for flag in lg_flags:
             if flag in aov and aov not in lightGroupLayers:
                 lightGroupLayers.append(aov)
     lightGroupLayers.sort()
     return lightGroupLayers
+    
+
 
 def deselect_all_nodes():
     for n in nuke.selectedNodes():
@@ -46,10 +53,10 @@ def deselect_all_nodes():
 
 #print get_lightgroups(nuke.selectedNode(),['_ASS_', '_L_', 'lights', 'Lights'] )
 
-def shuffle_out_lightgroups(node, settings = get_lightgroup_minicomp_settings() ):
+def shuffle_out_lightgroups(node):
     '''This will create a mini comp from the layers flagged as lightgroups in the user defined settings. Flags, spacing and use of postage stamps can be set in the panel as per the lightgroup_minicomp_settings function() '''
-
-    xPos, yPos=int(node.xpos()), int(node.ypos())
+    settings = get_lightgroup_minicomp_settings()
+    xPos, yPos=int(node.xpos() + node.screenWidth()/2 ), int(node.ypos() + node.screenHeight()/2)
     xSpace, ySpace = int(settings['xSpace']), int(settings['ySpace'])
     yPos+=ySpace
     beautyDot=nuke.nodes.NoOp(label = 'beauty', inputs=[node])
@@ -63,7 +70,7 @@ def shuffle_out_lightgroups(node, settings = get_lightgroup_minicomp_settings() 
     indexNo =0
     bPipeNodes=[unpremult] #all the merge nodes will be added to this list
     topDots = [unpremult]
-    for lg in get_lightgroups(node, settings['flags']):
+    for lg in get_lightgroups(node, settings['lg_flags']):
         deselect_all_nodes()
         selected=[]
         xPos +=xSpace
@@ -81,12 +88,12 @@ def shuffle_out_lightgroups(node, settings = get_lightgroup_minicomp_settings() 
         tempDot.setXpos(xPos+int(xSpace/2))
         tempDot.setYpos(shuffleNode.ypos()+ ySpace*3)
         yPos +=ySpace
-        fromNode=nuke.nodes.Merge2 (operation ='from', tile_color='4278190335.0', label = '<i>'+lg, inputs=[ bPipeNodes[indexNo], bPipeNodes[indexNo] ], Achannels=lg)
+        fromNode=nuke.nodes.Merge2 (operation ='from', output = 'rgb', tile_color='4278190335.0', label = '<i>'+lg, inputs=[ bPipeNodes[indexNo], bPipeNodes[indexNo] ], Achannels=lg)
         fromNode.setXYpos(node.xpos(), yPos )
         bottomCorner = nuke.nodes.Dot( inputs=[ shuffleNode ], tile_color='536805631.0', label = '<i>'+lg )
         yPos +=int(ySpace/2)
         bottomCorner.setXYpos(xPos, yPos )
-        merge = nuke.nodes.Merge2 (operation ='plus', label = '<i>'+lg, tile_color='536805631.0', inputs=[ fromNode, bottomCorner ])
+        merge = nuke.nodes.Merge2 (operation ='plus', output = 'rgb', label = '<i>'+lg, tile_color='536805631.0', inputs=[ fromNode, bottomCorner ])
         bPipeNodes.append( merge )
         merge.setXYpos(node.xpos(), yPos)
         for n in [dot, shuffleNode, tempDot]:
@@ -109,7 +116,6 @@ def shuffle_out_lightgroups(node, settings = get_lightgroup_minicomp_settings() 
     yPos+=ySpace
     premult = nuke.nodes.Premult(inputs = [removeNode] )
     premult.setXYpos(node.xpos(), yPos)
-
 
 
 

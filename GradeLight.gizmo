@@ -1,0 +1,145 @@
+#! /milk/apps/thefoundry/nuke/14.1v1/Nuke14.1v1/libnuke-14.1.1.so -nx
+version 14.1 v1
+add_layer {T_specular_albedo T_specular_albedo.red T_specular_albedo.green T_specular_albedo.blue}
+Gizmo {
+ inputs 2
+ addUserKnob {20 User}
+ addUserKnob {41 albedo l Albedo t "Incoming rgb values are divided by the Alebdo before grading and then multiplied back by the albedo.\n\nIn this way only the light is graded and not the texture (this is equivalent to using different colour/lights on the same object." T Shuffle1.in}
+ addUserKnob {41 mult l Multiply T Multiply1.value}
+ addUserKnob {7 exposure l "Exposure <font color = 'grey'>(stops)</>" R -4 4}
+ addUserKnob {6 use_mask l "Use Mask" +STARTLINE}
+}
+ Input {
+  inputs 0
+  name Mask
+  xpos 811
+  ypos 144
+  number 1
+ }
+ Input {
+  inputs 0
+  name Input1
+  xpos 508
+  ypos -274
+ }
+ Dot {
+  name Dot259
+  note_font_size 50
+  xpos 530
+  ypos -234
+ }
+set N33eb92d0 [stack 0]
+ Dot {
+  name Dot3
+  note_font_size 50
+  xpos 729
+  ypos -234
+ }
+ Shuffle2 {
+  fromInput1 {{0} B}
+  fromInput2 {{0} B}
+  mappings "4 rgba.red 0 0 rgba.red 0 0 rgba.green 0 1 rgba.green 0 1 rgba.blue 0 2 rgba.blue 0 2 white -1 -1 rgba.alpha 0 3"
+  name Shuffle2
+  label "\[value in1]"
+  xpos 701
+  ypos 56
+ }
+ Switch {
+  inputs 2
+  name Switch1
+  label "\[value which]"
+  selected true
+  xpos 701
+  ypos 138
+ }
+push $N33eb92d0
+ Dot {
+  name Dot1
+  note_font_size 50
+  xpos 408
+  ypos -234
+ }
+ Dot {
+  name Dot2
+  note_font_size 50
+  xpos 408
+  ypos 45
+ }
+set N2e5be270 [stack 0]
+push $N2e5be270
+push $N33eb92d0
+ Shuffle {
+  in T_specular_albedo
+  name Shuffle1
+  label "\[value in]"
+  xpos 596
+  ypos -184
+ }
+set N3625be60 [stack 0]
+ Dot {
+  name Dot260
+  note_font_size 50
+  xpos 618
+  ypos -121
+ }
+ Dot {
+  name Dot261
+  note_font_size 50
+  xpos 618
+  ypos -6
+ }
+push $N3625be60
+push $N33eb92d0
+ MergeExpression {
+  inputs 2
+  expr0 Ar>0?Br>0?Br/Ar:0:0
+  expr1 Ag>0?Bg>0?Bg/Ag:0:0
+  expr2 Ab>0?Bb>0?Bb/Ab:0:0
+  channel3 none
+  name DivideBbyA8
+  xpos 508
+  ypos -130
+ }
+ EXPTool {
+  mode Stops
+  red {{parent.exposure}}
+  green {{parent.exposure}}
+  blue {{parent.exposure}}
+  name Exposure4
+  xpos 508
+  ypos -106
+ }
+ Multiply {
+  channels rgb
+  name Multiply1
+  label "\[value value]"
+  xpos 508
+  ypos -64
+ }
+ Merge2 {
+  inputs 2
+  operation multiply
+  name Merge106
+  xpos 508
+  ypos 2
+ }
+ Copy {
+  inputs 2
+  from0 rgba.alpha
+  to0 rgba.alpha
+  name Copy1
+  xpos 508
+  ypos 47
+ }
+ Keymix {
+  inputs 3
+  name Keymix1
+  xpos 508
+  ypos 138
+ }
+ Output {
+  name Output1
+  xpos 508
+  ypos 195
+ }
+end_group
