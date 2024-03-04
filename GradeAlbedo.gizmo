@@ -1,0 +1,102 @@
+#! C:/Program Files/Nuke13.2v6/nuke-13.2.6.dll -nx
+version 13.2 v6
+add_layer {albedo albedo.red albedo.green albedo.blue}
+Gizmo {
+ inputs 2
+ tile_color 0x557fffff
+ gl_color 0x55ffffff
+ addUserKnob {20 User}
+ addUserKnob {26 _1 l "" +STARTLINE T "<font color = \"light blue\">Grade Albedo v1.0</font color>\n<br>\n<i>Daniel Mark Miller 2023</>"}
+ addUserKnob {41 albedopass l "<b>Albedo Pass" T Shuffle2.in}
+ addUserKnob {6 usemask l "Use Mask" +STARTLINE}
+ addUserKnob {41 blackpoint T Grade1.blackpoint}
+ addUserKnob {41 whitepoint T Grade1.whitepoint}
+ addUserKnob {41 black l lift T Grade1.black}
+ addUserKnob {41 white l gain T Grade1.white}
+ addUserKnob {41 multiply T Grade1.multiply}
+ addUserKnob {41 add l offset T Grade1.add}
+ addUserKnob {41 gamma T Grade1.gamma}
+ addUserKnob {41 reverse T Grade1.reverse}
+ addUserKnob {41 saturation T Saturation1.saturation}
+}
+ Input {
+  inputs 0
+  name mask
+  xpos 840
+  ypos 326
+  number 1
+ }
+ Shuffle {
+  red black
+  green black
+  blue black
+  alpha white
+  name Shuffle1
+  selected true
+  xpos 840
+  ypos 398
+  disable {{parent.usemask}}
+ }
+ Input {
+  inputs 0
+  name Input1
+  xpos 509
+  ypos 154
+ }
+ Dot {
+  name Dot13
+  xpos 543
+  ypos 194
+ }
+set N6b759400 [stack 0]
+ Shuffle {
+  in albedo
+  name Shuffle2
+  label "\[value in]"
+  xpos 290
+  ypos 271
+ }
+set N6b759800 [stack 0]
+ Grade {
+  multiply {1 1 1 1}
+  multiply_panelDropped true
+  name Grade1
+  xpos 290
+  ypos 337
+ }
+ Saturation {
+  name Saturation1
+  xpos 290
+  ypos 363
+ }
+push $N6b759800
+push $N6b759400
+ MergeExpression {
+  inputs 2
+  expr0 Br/Ar
+  expr1 Bg/Ag
+  expr2 Bb/Ab
+  name DivideBbyA
+  xpos 400
+  ypos 271
+ }
+ Merge2 {
+  inputs 2
+  operation multiply
+  name Merge8
+  xpos 400
+  ypos 422
+ }
+push $N6b759400
+ Keymix {
+  inputs 3
+  name Keymix1
+  xpos 510
+  ypos 439
+ }
+ Output {
+  name Output1
+  xpos 508
+  ypos 523
+ }
+end_group

@@ -94,9 +94,10 @@ def create_minicomp(node):
             dot = nuke.nodes.Dot(inputs = [ original_dots[-1] ] )
             original_dots.append( dot)
             original_dots[-1].setXYpos(original_dot.xpos(), y_pos )
-            unpremult=nuke.nodes.Unpremult(inputs = [ original_dots[-1]])
-            unpremult.setXYpos(original_dots[-1].xpos()+int(x_space/2), original_dots[-1].ypos() )
-            divide_node = divide_b_by_a ( [ main_b_pipe[-1], unpremult], x_pos, y_pos)
+            unpremult = nuke.nodes.Unpremult(inputs = [original_dots[-1]])
+            unpremult.setXYpos( int( ( main_b_pipe[-1].xpos()+original_dots[-1].xpos())/2 ), y_pos )
+
+            divide_node = divide_b_by_a ( [ main_b_pipe[-1], unpremult ], x_pos, y_pos)
             main_b_pipe.append(divide_node)
             y_pos = y_pos + y_space
             merge_multiply = nuke.nodes.Merge(inputs = [ main_b_pipe[-1], node], operation = 'multiply', output = 'rgb')
@@ -110,7 +111,7 @@ def create_minicomp(node):
     dot.setXYpos(original_dots[-1].xpos(),y_pos)
     original_dots.append( dot)
     y_pos+=y_space
-    copy_alpha = nuke.nodes.Copy(inputs = [ main_b_pipe[-1] , original_dots[-1] ])
+    copy_alpha = nuke.nodes.Copy(inputs = [ main_b_pipe[-1] , original_dots[-1] ], from0 = 'rgba.alpha', to0 = 'rgba.alpha')
     copy_alpha.setXYpos(x_pos, y_pos)
     main_b_pipe.append(copy_alpha)
     y_pos+=y_space
@@ -123,7 +124,7 @@ def shuffle_out_aovs(node, x_pos, y_pos, settings, flag):
     y_pos+=y_space
     index_no =0
     loop_b_pipe_x = node.xpos() + x_space
-    loop_top_node=nuke.nodes.Unpremult( inputs=[node] )
+    loop_top_node=nuke.nodes.Remove(operation="remove", channels ="rgb", inputs=[node] )
     loop_top_node.setXYpos(loop_b_pipe_x, node.ypos() )
     b_pipe_nodes=[loop_top_node] #all the merge_plus nodes will be added to this list
     top_dots = [loop_top_node]
