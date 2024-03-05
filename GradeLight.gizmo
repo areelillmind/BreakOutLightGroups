@@ -1,7 +1,7 @@
 #! /milk/apps/thefoundry/nuke/14.1v1/Nuke14.1v1/libnuke-14.1.1.so -nx
 version 14.1 v1
-add_layer {T_specular_albedo T_specular_albedo.red T_specular_albedo.green T_specular_albedo.blue}
-Gizmo {
+add_layer {T_diffuse_albedo T_diffuse_albedo.red T_diffuse_albedo.green T_diffuse_albedo.blue}
+Group {
  inputs 2
  addUserKnob {20 User}
  addUserKnob {41 albedo l Albedo t "Incoming rgb values are divided by the Alebdo before grading and then multiplied back by the albedo.\n\nIn this way only the light is graded and not the texture (this is equivalent to using different colour/lights on the same object." T Shuffle1.in}
@@ -28,7 +28,7 @@ Gizmo {
   xpos 530
   ypos -234
  }
-set N33eb92d0 [stack 0]
+set N15d38f10 [stack 0]
  Dot {
   name Dot3
   note_font_size 50
@@ -44,15 +44,15 @@ set N33eb92d0 [stack 0]
   xpos 701
   ypos 56
  }
+set N15e330a0 [stack 0]
  Switch {
   inputs 2
   name Switch1
   label "\[value which]"
-  selected true
   xpos 701
   ypos 138
  }
-push $N33eb92d0
+push $N15d38f10
  Dot {
   name Dot1
   note_font_size 50
@@ -65,17 +65,16 @@ push $N33eb92d0
   xpos 408
   ypos 45
  }
-set N2e5be270 [stack 0]
-push $N2e5be270
-push $N33eb92d0
+set N17f6bdc0 [stack 0]
+push $N15d38f10
  Shuffle {
-  in T_specular_albedo
+  in T_diffuse_albedo
   name Shuffle1
   label "\[value in]"
   xpos 596
   ypos -184
  }
-set N3625be60 [stack 0]
+set N16c8c500 [stack 0]
  Dot {
   name Dot260
   note_font_size 50
@@ -88,8 +87,8 @@ set N3625be60 [stack 0]
   xpos 618
   ypos -6
  }
-push $N3625be60
-push $N33eb92d0
+push $N16c8c500
+push $N15d38f10
  MergeExpression {
   inputs 2
   expr0 Ar>0?Br>0?Br/Ar:0:0
@@ -131,6 +130,7 @@ push $N33eb92d0
   xpos 508
   ypos 47
  }
+push $N17f6bdc0
  Keymix {
   inputs 3
   name Keymix1
@@ -141,5 +141,14 @@ push $N33eb92d0
   name Output1
   xpos 508
   ypos 195
+ }
+push $N15e330a0
+ Viewer {
+  frame_range 1001-1389
+  fps 25
+  viewerProcess "Rec.709 (default)"
+  name Viewer1
+  xpos 701
+  ypos 94
  }
 end_group
