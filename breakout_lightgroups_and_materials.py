@@ -3,7 +3,7 @@ import re
 import nukescripts
 
 def divide_b_by_a(input_nodes, x_pos, y_pos):
-    divide_node=nuke.nodes.MergeExpression(channel0 = 'r', channel1 = 'g', channel2 = 'b', expr0 = 'Ar>0?Br>0?Br/Ar:0:0', expr1 = 'Ag>0?Bg>0?Bg/Ag:0:0', expr2 = 'Ab>0?Bb>0?Bb/Ab:0:0', label = 'divide B by A' )
+    divide_node=nuke.nodes.MergeExpression(inputs = input_nodes, channel0 = 'r', channel1 = 'g', channel2 = 'b', expr0 = 'Ar>0?Br>0?Br/Ar:0:0', expr1 = 'Ag>0?Bg>0?Bg/Ag:0:0', expr2 = 'Ab>0?Bb>0?Bb/Ab:0:0', label = 'divide B by A' )
     divide_node.setXYpos(x_pos, y_pos)
     return divide_node
 
