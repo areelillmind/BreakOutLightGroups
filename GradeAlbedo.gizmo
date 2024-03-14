@@ -1,6 +1,6 @@
-#! C:/Program Files/Nuke13.2v6/nuke-13.2.6.dll -nx
-version 13.2 v6
-add_layer {albedo albedo.red albedo.green albedo.blue}
+#! /milk/apps/thefoundry/nuke/14.1v1/Nuke14.1v1/libnuke-14.1.1.so -nx
+version 14.1 v1
+add_layer {T_diffuse_albedo T_diffuse_albedo.red T_diffuse_albedo.green T_diffuse_albedo.blue}
 Gizmo {
  inputs 2
  tile_color 0x557fffff
@@ -32,7 +32,6 @@ Gizmo {
   blue black
   alpha white
   name Shuffle1
-  selected true
   xpos 840
   ypos 398
   disable {{parent.usemask}}
@@ -40,63 +39,73 @@ Gizmo {
  Input {
   inputs 0
   name Input1
-  xpos 509
-  ypos 154
+  xpos 521
+  ypos 150
  }
  Dot {
   name Dot13
   xpos 543
   ypos 194
  }
-set N6b759400 [stack 0]
+set N1d364bf0 [stack 0]
  Shuffle {
-  in albedo
+  in T_diffuse_albedo
   name Shuffle2
   label "\[value in]"
-  xpos 290
-  ypos 271
+  xpos 286
+  ypos 282
  }
-set N6b759800 [stack 0]
+set N1d390ce0 [stack 0]
  Grade {
-  multiply {1 1 1 1}
-  multiply_panelDropped true
   name Grade1
-  xpos 290
-  ypos 337
+  xpos 286
+  ypos 343
  }
  Saturation {
   name Saturation1
-  xpos 290
-  ypos 363
+  xpos 286
+  ypos 369
  }
-push $N6b759800
-push $N6b759400
+push $N1d390ce0
+push $N1d364bf0
  MergeExpression {
   inputs 2
-  expr0 Br/Ar
-  expr1 Bg/Ag
-  expr2 Bb/Ab
-  name DivideBbyA
-  xpos 400
-  ypos 271
+  expr0 Ar>0?Br>0?Br/Ar:0:0
+  expr1 Ag>0?Bg>0?Bg/Ag:0:0
+  expr2 Ab>0?Bb>0?Bb/Ab:0:0
+  channel3 none
+  name DivideBbyA2
+  xpos 419
+  ypos 288
  }
  Merge2 {
   inputs 2
   operation multiply
   name Merge8
-  xpos 400
-  ypos 422
+  xpos 419
+  ypos 438
  }
-push $N6b759400
+push $N1d364bf0
  Keymix {
   inputs 3
   name Keymix1
   xpos 510
-  ypos 439
+  ypos 450
  }
+set N1d37d650 [stack 0]
  Output {
   name Output1
-  xpos 508
-  ypos 523
+  xpos 510
+  ypos 542
+ }
+push $N1d37d650
+ Viewer {
+  frame_range 1001-1389
+  fps 25
+  colour_sample_bbox {0.368750006 0.112499997 0.3708333373 0.1145833358}
+  viewerProcess "Rec.709 (default)"
+  name Viewer1
+  xpos 685
+  ypos 206
  }
 end_group

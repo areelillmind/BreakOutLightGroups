@@ -1,6 +1,29 @@
+'''
+Module to create minicomps from CG renders, can split by lightgroups, materials or both. Uses default flags expected in the aov naming but these can be user defined.
+'''
 import nuke
 import re
 import nukescripts
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+
+## default beahviours
+LIGHTGROUP_FLAGS = 'C_'
+#LIGHTGROUP_REJECT_FLAGS = ''
+MATERIAL_FLAGS = 'M_'
+#MATERIAL_REJECT_FLAGS = '_direct, _indirect'
+SHOW_POSTAGE_STAMPS = False
+BREAKOUT_MATERIALS = True
+BREAKOUT_LIGHTGROUPS = True
+X_SPACE = '300'
+Y_SPACE = '150'
+TILE_COLOURS_LIGHT= [0x6bb2b2ff,0x3f7f7fff]
+TILE_COLOURS_MAT = [0xcc8c65ff, 0x99694bff ]
+DIRECT_INDIRECT_FLAGS = ['_direct','_indirect']
+LG_SPLIT = True
+MAT_SPLIT = False
+
 
 def divide_b_by_a(input_nodes, x_pos, y_pos):
     divide_node=nuke.nodes.MergeExpression(inputs = input_nodes, channel0 = 'r', channel1 = 'g', channel2 = 'b', expr0 = 'Ar>0?Br>0?Br/Ar:0:0', expr1 = 'Ag>0?Bg>0?Bg/Ag:0:0', expr2 = 'Ab>0?Bb>0?Bb/Ab:0:0', label = 'divide B by A' )
@@ -14,35 +37,55 @@ def get_layers(node):
     layers.sort()
     return layers
 
+def comma_seperated_to_list(comma_seperated_string):
+    comma_seperated_string = re.sub(' ', '', comma_seperated_string)
+    output_list = comma_seperated_string.split(',')
+    return output_list
+
+def check_strings_in_string(list_of_strings, check_string):
+    result = False
+    for string in list_of_strings:
+        if string in check_string:
+            result = True
+    return result
+
 def get_aov_minicomp_settings():
     '''Customize lightgroup naming conventions used'''
     settings={}
-    p = nuke.Panel('Lighrgroup Shuffle out settings')
-    p.addSingleLineInput('lightgroup flags (comma separated)', 'LGT')
-    p.addSingleLineInput('material flags (comma separated)', 'M_')
-    p.addBooleanCheckBox('show shuffle postage stamps', False)
-    p.addBooleanCheckBox('breakout lightgroups', True)
-    p.addBooleanCheckBox('breakout materials', True)
-    p.addSingleLineInput('x_space', '300')
-    p.addSingleLineInput('y_space', '150')
+    p = nuke.Panel('AOV Minicomp Settings')
+    p.addSingleLineInput('lightgroup flags (comma separated)', LIGHTGROUP_FLAGS)
+    p.addEnumerationPulldown('light aov style', 'direct+indirect combined')
+    #p.addSingleLineInput('lightgroup flags to reject (comma separated)', LIGHTGROUP_REJECT_FLAGS)
+    p.addSingleLineInput('material flags (comma separated)', MATERIAL_FLAGS)
+    p.addEnumerationPulldown('material aov style', 'combined direct+indirect')
+    #p.addSingleLineInput('material flags to reject (comma separated)', MATERIAL_REJECT_FLAGS)
+    p.addBooleanCheckBox('show shuffle postage stamps', SHOW_POSTAGE_STAMPS)
+    p.addBooleanCheckBox('breakout lightgroups', BREAKOUT_LIGHTGROUPS)
+    p.addBooleanCheckBox('breakout materials', BREAKOUT_MATERIALS)
+    p.addSingleLineInput('x_space', X_SPACE)
+    p.addSingleLineInput('y_space', Y_SPACE)
     ret = p.show()
-    lg_flags = p.value('lightgroup flags (comma separated)')
-    lg_flags = re.sub(' ', '', lg_flags)
-    lg_flags = lg_flags.split(',')
-    mat_flags = p.value('material flags (comma separated)')
-    mat_flags = re.sub(' ', '', mat_flags)
-    mat_flags = mat_flags.split(',')
+    if ret == 0:
+        return {}
+    ## collate and items to settings dictionary
+    lg_flags = comma_seperated_to_list( p.value('lightgroup flags (comma separated)') )
+    if p.value('light aov style') == 'direct+indirect':
+        lg_split=True
+    else:
+        lg_split=False
+    mat_flags = comma_seperated_to_list( p.value('material flags (comma separated)') )
+    if p.value('material aov style') == 'direct+indirect':
+        mat_split=True
+    else:
+        mat_split=False
     breakout_materials = p.value ('breakout materials')
     breakout_lightgroups = p.value ('breakout lightgroups')
-    tile_colours_light= [0x6bb2b2ff,0x3f7f7fff]
-    tile_colours_mat = [0xcc8c65ff, 0x99694bff ]
-    settings['flags'] = [(breakout_lightgroups, lg_flags, tile_colours_light), (breakout_materials, mat_flags, tile_colours_mat)]
+    settings['flags'] = [(breakout_lightgroups, lg_flags, TILE_COLOURS_LIGHT, lg_split), (breakout_materials, mat_flags, TILE_COLOURS_MAT, mat_split)]
     settings['pstamps'] = p.value('show shuffle postage stamps')
     settings['x_space'] = p.value('x_space')
     settings['y_space'] = p.value('y_space')
     
     return settings
-
 
 
 def get_lightgroups(node, flags ):
@@ -62,11 +105,19 @@ def deselect_all_nodes():
     for n in nuke.selectedNodes():
         n['selected'].setValue(False)
 
-#print get_lightgroups(nuke.selectedNode(),['_ASS_', '_L_', 'lights', 'Lights'] )
-        
-def create_minicomp(node):
-    settings = get_aov_minicomp_settings()
 
+        
+def create_minicomp(node, get_user_settings=True):
+    if get_user_settings == True:
+        settings = get_aov_minicomp_settings()
+        if settings == {}:
+            return
+    else:
+        settings = {"flags":[[BREAKOUT_LIGHTGROUPS, comma_seperated_to_list(LIGHTGROUP_FLAGS),TILE_COLOURS_LIGHT, LG_SPLIT ], 
+                            [BREAKOUT_MATERIALS, comma_seperated_to_list(MATERIAL_FLAGS), TILE_COLOURS_MAT, MAT_SPLIT]],
+                "pstamps":SHOW_POSTAGE_STAMPS,
+                "x_space":X_SPACE,
+                "y_space": Y_SPACE}
     materials = True
     main_b_pipe = [node]
     x_pos, y_pos=int(node.xpos()), int(node.ypos())
@@ -86,12 +137,11 @@ def create_minicomp(node):
     
     # main breakout loop
     for flag in settings['flags']:
+        logging.debug(flag)
         if flag[0]  == True :
             node = shuffle_out_aovs(main_b_pipe[-1], x_pos + x_space, y_pos, settings, flag)
             loop_b_pipe.append(node)
             y_pos= node.ypos()+y_space
-            
-
 
             y_pos = node.ypos() + y_space
             dot = nuke.nodes.Dot(inputs = [ original_dots[-1] ] )
@@ -121,7 +171,7 @@ def create_minicomp(node):
     premult.setXYpos(b_pipe_root.xpos(), y_pos)
 
 def shuffle_out_aovs(node, x_pos, y_pos, settings, flag):
-    '''This will create a mini comp from the layers flagged as lightgroups in the user defined settings. Flags, spacing and use of postage stamps can be set in the panel as per the lightgroup_minicomp_settings function() '''
+    '''This will create a mini comp from the layers flagged as lightgroups or materials in the user defined settings. Flags, spacing and use of postage stamps can be set in the panel as per the lightgroup_minicomp_settings function() '''
     x_space, y_space = int(settings['x_space']), int(settings['y_space'])
     y_pos+=y_space
     index_no =0
@@ -135,6 +185,12 @@ def shuffle_out_aovs(node, x_pos, y_pos, settings, flag):
     toggle_switch = {0:1,1:0}
     switch_pos = 0
     for aov in aov_layers:
+        logging.info(aov)
+        ## check if aovs need splitting into direct/indirect - currently it's all the avos or none of them
+        if flag[3]  ==  True and check_strings_in_string(DIRECT_INDIRECT_FLAGS , aov ) == False:
+            continue
+        if flag[3] == False and check_strings_in_string(DIRECT_INDIRECT_FLAGS , aov ) == True:
+            continue
         deselect_all_nodes()
         selected=[]
         x_pos +=x_space
