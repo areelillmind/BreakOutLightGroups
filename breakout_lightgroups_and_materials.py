@@ -176,9 +176,12 @@ def shuffle_out_aovs(node, x_pos, y_pos, settings, flag):
     y_pos+=y_space
     index_no =0
     loop_b_pipe_x = node.xpos() + x_space
-    loop_top_node=nuke.nodes.Remove(operation="remove", channels ="rgb", inputs=[node])
+    loop_top_node=nuke.nodes.Dot( inputs=[node])
     loop_top_node.setXYpos(loop_b_pipe_x, node.ypos() )
-    b_pipe_nodes=[loop_top_node] #all the merge_plus nodes will be added to this list
+    remove_node = nuke.nodes.Remove(operation="remove", channels ="rgb", inputs=[loop_top_node])
+    y_pos+=y_space
+    remove_node.setXYpos(loop_b_pipe_x, y_pos)
+    b_pipe_nodes=[loop_top_node, remove_node] #all the merge_plus nodes will be added to this list
     top_dots = [loop_top_node]
 
     aov_layers = get_lightgroups(node, flag[1])
