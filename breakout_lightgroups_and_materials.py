@@ -127,9 +127,9 @@ def create_minicomp(node, get_user_settings=True):
     b_pipe_root.setXYpos(node.xpos(), y_pos)
     main_b_pipe.append(b_pipe_root)
     y_pos+=y_space
-    unpremult_all=nuke.nodes.Unpremult(channels='all', inputs=[b_pipe_root])
-    unpremult_all.setXYpos(node.xpos(), y_pos)
-    main_b_pipe.append(unpremult_all)
+    unpremult_main=nuke.nodes.Unpremult(channels='rgb', inputs=[b_pipe_root])
+    unpremult_main.setXYpos(node.xpos(), y_pos)
+    main_b_pipe.append(unpremult_main)
     original_dot = nuke.nodes.Dot(inputs = [b_pipe_root])
     original_dot.setXYpos(b_pipe_root.xpos()-int(x_space), b_pipe_root.ypos() )
     original_dots = [ original_dot ]
@@ -163,7 +163,7 @@ def create_minicomp(node, get_user_settings=True):
     dot.setXYpos(original_dots[-1].xpos(),y_pos)
     original_dots.append( dot)
     y_pos+=y_space
-    copy_alpha = nuke.nodes.Copy(inputs = [ main_b_pipe[-1] , original_dots[-1] ], from0 = 'rgba.alpha', to0 = 'rgba.alpha')
+    copy_alpha = nuke.nodes.Copy(inputs = [ main_b_pipe[-1] , original_dots[-1] ], from0 = 'rgba.alpha', to0 = 'rgba.alpha', from1 = 'Z.Z', to1 = 'depth.Z')
     copy_alpha.setXYpos(x_pos, y_pos)
     main_b_pipe.append(copy_alpha)
     y_pos+=y_space
@@ -209,11 +209,13 @@ def shuffle_out_aovs(node, x_pos, y_pos, settings, flag):
         shuffle_node['mappings'].setValue([('rgba.alpha','rgba.alpha')])
         shuffle_node['postage_stamp'].setValue( settings['pstamps'])
         shuffle_node.setYpos(dot.ypos()+ 100)
+        unpremult_branch=nuke.nodes.Unpremult(channels='rgb', inputs=[shuffle_node])
+        unpremult_branch.setXYpos(shuffle_node.xpos(), shuffle_node.ypos() +100)
         #tempDot=nuke.nodes.Dot( ) #defines corner of backdrop
         #tempDot.setXpos(x_pos+int(x_space/2))
         #tempDot.setYpos(shuffle_node.ypos()+ y_space*3)
         y_pos +=y_space
-        bottom_corner = nuke.nodes.Dot( inputs=[ shuffle_node ], tile_color='536805631.0', label = '<i>'+aov )
+        bottom_corner = nuke.nodes.Dot( inputs=[ unpremult_branch ], tile_color='536805631.0', label = '<i>'+aov )
         y_pos +=int(y_space/2)
         bottom_corner.setXYpos(x_pos, y_pos )
         merge_plus = nuke.nodes.Merge2 (operation ='plus', label = '<i>'+aov, tile_color='536805631.0', inputs=[ b_pipe_nodes[-1], bottom_corner ], output = 'rgb' )
@@ -234,10 +236,15 @@ def shuffle_out_aovs(node, x_pos, y_pos, settings, flag):
     y_pos +=y_space
     # pipe for unnasigned lights.
     unassigned_light_dot = nuke.nodes.Dot( inputs = [top_dots[-1]], label = '<i> unassigned' )
-    unassigned_light_pipe = [unassigned_light_dot]
+    
     unassigned_light_dot.setXpos (final_x_pos)
     unassigned_y_pos = dot.ypos()
     unassigned_light_dot.setYpos(unassigned_y_pos)
+    unassigned_unpremult = nuke.nodes.Unpremult( inputs = [unassigned_light_dot], channels = 'all')
+    unassigned_y_pos += y_space
+    unassigned_unpremult.setXYpos(final_x_pos, unassigned_y_pos)
+    unassigned_light_pipe = [ unassigned_unpremult]
+    
     index_no = 0
     for aov in aov_layers:
         
